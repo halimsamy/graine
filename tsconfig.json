@@ -4,12 +4,14 @@
     "module": "commonjs",
     "rootDir": "./src",
     "moduleResolution": "node",
+    "declaration": true,
     "sourceMap": true,
-    "outDir": "./build",
+    "outDir": "./lib",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true
   },
   "exclude": ["node_modules", "build", "vitest.config.ts"],
+  "include": ["src"]
 }

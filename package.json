@@ -2,7 +2,8 @@
   "name": "graine",
   "version": "0.1.0",
   "description": "Efficiently populating databases with hierarchical and customizable test data",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
     "lint": "rome check .",
