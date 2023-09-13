@@ -4,7 +4,7 @@
     "enabled": false
   },
   "files": {
-    "ignore": ["./**/*.js", "node_modules/**/*"]
+    "ignore": ["./**/*.js", "./**/*.d.ts", "node_modules/**/*"]
   },
   "linter": {
     "enabled": true,
