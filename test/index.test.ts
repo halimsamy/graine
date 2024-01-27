@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { faker } from '@faker-js/faker';
-import { ISeederWriter, Seeder, ref } from '../src/index';
+import { ISeederWriter, Seeder, SeederFactory, ref } from '../src/index';
 
 class InMemoryDatabaseWriter implements ISeederWriter {
   // rome-ignore lint: we don't know what the type of the property is.
@@ -28,7 +28,7 @@ describe('Seeder', () => {
         phone: faker.phone.imei(),
         age: faker.number.int({ min: 18, max: 60 }),
       }),
-      refs: [ref('channel', 'channelID')],
+      refs: [ref({ factory: 'channel', foreignKey: 'channelID' })],
     });
 
     seeder.addFactory({
@@ -38,6 +38,7 @@ describe('Seeder', () => {
       provider: () => ({
         name: faker.word.noun(),
       }),
+      refs: [],
     });
 
     afterEach(() => {
@@ -74,26 +75,38 @@ describe('Seeder', () => {
     const databaseWriter = new InMemoryDatabaseWriter();
     const seeder = new Seeder(databaseWriter);
 
-    seeder.addFactory({
-      id: 'user',
-      tableName: 'users',
-      primaryKey: 'userID',
-      provider: () => ({
-        name: faker.person.firstName(),
-        phone: faker.phone.imei(),
-        age: faker.number.int({ min: 18, max: 60 }),
-      }),
-      refs: [ref('channel', 'channelID')],
-    });
+    class UserFactory extends SeederFactory {
+      id = 'user';
+      tableName = 'users';
+      primaryKey = 'userID';
 
-    seeder.addFactory({
-      id: 'channel',
-      tableName: 'channels',
-      primaryKey: 'channelID',
-      provider: () => ({
-        name: faker.word.noun(),
-      }),
-    });
+      get refs() {
+        return [ref({ factory: 'channel', foreignKey: 'channelID' })];
+      }
+
+      provider() {
+        return {
+          name: faker.person.firstName(),
+          phone: faker.phone.imei(),
+          age: faker.number.int({ min: 18, max: 60 }),
+        };
+      }
+    }
+
+    class ChannelFactory extends SeederFactory {
+      id = 'channel';
+      tableName = 'channels';
+      primaryKey = 'channelID';
+
+      provider() {
+        return {
+          name: faker.word.noun(),
+        };
+      }
+    }
+
+    seeder.addFactory(new UserFactory());
+    seeder.addFactory(new ChannelFactory());
 
     afterEach(() => {
       databaseWriter.database = {};
@@ -130,6 +143,7 @@ describe('Seeder', () => {
         phone: faker.phone.imei(),
         age: faker.number.int({ min: 18, max: 60 }),
       }),
+      refs: [],
     });
 
     seeder.addFactory({
@@ -139,6 +153,7 @@ describe('Seeder', () => {
       provider: () => ({
         name: faker.word.noun(),
       }),
+      refs: [],
     });
 
     seeder.addFactory({
@@ -146,7 +161,7 @@ describe('Seeder', () => {
       tableName: 'user_channels',
       primaryKey: 'userChannelID',
       provider: () => ({}),
-      refs: [ref('user', 'userID'), ref('channel', 'channelID')],
+      refs: [ref({ factory: 'user', foreignKey: 'userID' }), ref({ factory: 'channel', foreignKey: 'channelID' })],
     });
 
     afterEach(() => {
@@ -210,7 +225,7 @@ describe('Seeder', () => {
       provider: () => ({
         name: faker.person.fullName(),
       }),
-      refs: [ref('plan', 'planID'), ref('billing_cycle', 'billingCycleID')],
+      refs: [ref({ factory: 'plan', foreignKey: 'planID' }), ref({ factory: 'billing_cycle', foreignKey: 'billingCycleID' })],
     });
 
     seeder.addFactory({
@@ -220,6 +235,7 @@ describe('Seeder', () => {
       provider: () => ({
         name: faker.word.noun(),
       }),
+      refs: [],
     });
 
     seeder.addFactory({
@@ -229,7 +245,7 @@ describe('Seeder', () => {
       provider: () => ({
         name: faker.word.noun(),
       }),
-      refs: [ref('plan', 'planID')],
+      refs: [ref({ factory: 'plan', foreignKey: 'planID' })],
     });
 
     afterEach(() => {

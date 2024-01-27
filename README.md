@@ -19,7 +19,7 @@ npm install -D graine
 ### Usage
 Here's an example of how to use Graine to seed data:
 ```javascript
-const { Seeder, ref } = require('graine');
+const { Seeder, SeederFactory, ref } = require('graine');
 const faker = require('faker');
 
 // Create a database writer (you can use your own database connection here)
@@ -38,7 +38,12 @@ seeder.addFactory({
     phone: faker.phone.imei(),
     age: faker.number.int({ min: 18, max: 60 }),
   }),
-  refs: [ref('channel', 'channelID')], // one-to-many relationship with a foreign key
+  refs: [
+    ref({ 
+      factory: 'channel', // reference to the channel factory, which is defined below
+      foreignKey: 'channelID'
+     }) // one-to-many relationship with a foreign key
+  ],
 });
 
 seeder.addFactory({
@@ -48,6 +53,7 @@ seeder.addFactory({
   provider: () => ({
     name: faker.word.noun(),
   }),
+  refs: [] // no references, e.g. this table doesn't have any foreign keys
 });
 
 // Seed users each with different channel
@@ -57,8 +63,29 @@ await seeder.seed('user'); // seed one user, with a another random channel
 // Seed multiple users, with the same channel
 const channelID = await seeder.seed('channel'); // seed one channel
 
-await seeder.seed('user', { channelID }); // seed one user, with the specified channel
-await seeder.seed('user', { channelID }); // seed one user, with the specified channel
+await seeder.seed('user', { refs: { channelID } }); // seed one user, with the specified channel
+await seeder.seed('user', { refs: { channelID } }); // seed one user, with the specified channel
+
+// Also, you can inherit from a base factory
+class UserFactory extends SeederFactory {
+  id = 'user';
+  tableName = 'users';
+  primaryKey = 'userID';
+  
+  get refs() {
+    return [ref({ factory: 'channel', foreignKey: 'channelID' })];
+  }
+
+  provider() {
+    return {
+      name: faker.person.firstName(),
+      phone: faker.phone.imei(),
+      age: faker.number.int({ min: 18, max: 60 }),
+    };
+  }
+}
+
+seed.addFactory(new UserFactory());
 ```
 
 This example demonstrates seeding data for `user`(s) and `channel`(s), since having a user requires a channel, we use `refs` to define the relationship between the two and the seeder will automatically handle the relationship. You can configure factories according to your project's needs.

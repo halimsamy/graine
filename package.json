@@ -1,6 +1,6 @@
 {
   "name": "graine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Efficiently populating databases with hierarchical and customizable test data",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
