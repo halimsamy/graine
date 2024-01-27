@@ -105,8 +105,7 @@ describe('Seeder', () => {
       }
     }
 
-    seeder.addFactory(new UserFactory());
-    seeder.addFactory(new ChannelFactory());
+    seeder.addFactory(new UserFactory(), new ChannelFactory());
 
     afterEach(() => {
       databaseWriter.database = {};

@@ -13,9 +13,11 @@ export default class Seeder {
     return factory;
   }
 
-  public addFactory(factory: SeederFactory) {
-    if (this.factories.find((f) => f.id === factory.id)) throw new Error(`Factory with id "${factory.id}" already exists`);
-    this.factories.push(factory);
+  public addFactory(...factories: SeederFactory[]) {
+    for (const factory of factories) {
+      if (this.factories.find((f) => f.id === factory.id)) throw new Error(`Factory with id "${factory.id}" already exists`);
+      this.factories.push(factory);
+    }
   }
 
   public async seed(factoryID: string, args: SeederFactoryProviderArgs = {}) {
