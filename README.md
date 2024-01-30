@@ -86,7 +86,7 @@ await Graine.seed('user', { refs: { channelID } }); // seed another user, with t
 Graine.cleanUp('users');
 Graine.cleanUp('channels');
 
-// Or clean up all everything
+// Clean up all factories?
 Graine.cleanUp();
 ```
 
