@@ -17,16 +17,86 @@ npm install -D graine
 ```
 
 ### Usage
-Here's an example of how to use Graine to seed data:
+#### Using Classes
+```typescript
+import Graine, { SeederFactory, ISeederWriter } from 'graine';
+import { faker } from '@faker-js/faker';
+
+class MyDatabaseWriter implements ISeederWriter {
+  async insert(tableName: string, primaryKey: string, data: object): Promise<number> {
+    // insert data into the database...
+  }
+
+  async cleanUp(tables?: string[]): Promise<void> {
+    // clean up the database... should clean up all tables if no tables are specified
+  }
+}
+
+Graine.setWriter(new MyDatabaseWriter());
+
+class UserFactory extends SeederFactory {
+  id = 'user';
+  tableName = 'users';
+  primaryKey = 'userID';
+  
+  get refs() {
+    return [
+      ref({ 
+        factory: 'channel', // reference to the channel factory, which is defined below
+        foreignKey: 'channelID'
+      }) // one-to-many relationship with a foreign key
+    ];
+  }
+
+  provider() {
+    return {
+      name: faker.person.firstName(),
+      phone: faker.phone.imei(),
+      age: faker.number.int({ min: 18, max: 60 }),
+    };
+  }
+}
+
+class ChannelFactory extends SeederFactory {
+  id = 'channel';
+  tableName = 'channels';
+  primaryKey = 'channelID';
+
+  provider() {
+    return {
+      name: faker.word.noun(),
+    };
+  }
+}
+
+Graine.addFactory(new UserFactory());
+Graine.addFactory(new ChannelFactory());
+
+// Seed users each with different channel
+await Graine.seed('user'); // seed one user, with a random channel
+await Graine.seed('user'); // seed another user, with a another random channel
+
+// Seed multiple users, with the same channel
+const channelID = await Graine.seed('channel'); // seed one channel
+
+await Graine.seed('user', { refs: { channelID } }); // seed one user, with the specified channel
+await Graine.seed('user', { refs: { channelID } }); // seed another user, with the same channel
+
+// Clean up
+Graine.cleanUp('users');
+Graine.cleanUp('channels');
+
+// Or clean up all everything
+Graine.cleanUp();
+```
+
+#### More of a JavaScript person?
 ```javascript
 const { Seeder, SeederFactory, ref } = require('graine');
-const faker = require('faker');
+const { faker } = require('@faker-js/faker');
 
-// Create a database writer (you can use your own database connection here)
-const databaseWriter = new InMemoryDatabaseWriter();
-
-// Initialize Seeder
-const seeder = new Seeder(databaseWriter);
+// Initialize Seeder (you can use the default exported Graine instance)
+const seeder = new Seeder(new MyDatabaseWriter());
 
 // Define data factories
 seeder.addFactory({
@@ -56,36 +126,7 @@ seeder.addFactory({
   refs: [] // no references, e.g. this table doesn't have any foreign keys
 });
 
-// Seed users each with different channel
 await seeder.seed('user'); // seed one user, with a random channel
-await seeder.seed('user'); // seed one user, with a another random channel
-
-// Seed multiple users, with the same channel
-const channelID = await seeder.seed('channel'); // seed one channel
-
-await seeder.seed('user', { refs: { channelID } }); // seed one user, with the specified channel
-await seeder.seed('user', { refs: { channelID } }); // seed one user, with the specified channel
-
-// Also, you can inherit from a base factory
-class UserFactory extends SeederFactory {
-  id = 'user';
-  tableName = 'users';
-  primaryKey = 'userID';
-  
-  get refs() {
-    return [ref({ factory: 'channel', foreignKey: 'channelID' })];
-  }
-
-  provider() {
-    return {
-      name: faker.person.firstName(),
-      phone: faker.phone.imei(),
-      age: faker.number.int({ min: 18, max: 60 }),
-    };
-  }
-}
-
-seed.addFactory(new UserFactory());
 ```
 
 This example demonstrates seeding data for `user`(s) and `channel`(s), since having a user requires a channel, we use `refs` to define the relationship between the two and the seeder will automatically handle the relationship. You can configure factories according to your project's needs.
