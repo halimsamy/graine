@@ -12,6 +12,17 @@ class InMemoryDatabaseWriter implements ISeederWriter {
     this.database[tableName].push({ [primaryKey]: id, ...data });
     return id;
   }
+
+  async cleanUp(tables?: string[]): Promise<void> {
+    if (!tables) {
+      this.database = {};
+      return;
+    }
+
+    for (const table of tables) {
+      this.database[table] = [];
+    }
+  }
 }
 
 describe('Seeder', () => {
@@ -42,7 +53,7 @@ describe('Seeder', () => {
     });
 
     afterEach(() => {
-      databaseWriter.database = {};
+      seeder.cleanUp();
     });
 
     it('should seed a single channel', async () => {
@@ -108,7 +119,7 @@ describe('Seeder', () => {
     seeder.addFactory(new UserFactory(), new ChannelFactory());
 
     afterEach(() => {
-      databaseWriter.database = {};
+      seeder.cleanUp();
     });
 
     it('should seed a single channel linked to many users', async () => {
@@ -164,7 +175,7 @@ describe('Seeder', () => {
     });
 
     afterEach(() => {
-      databaseWriter.database = {};
+      seeder.cleanUp();
     });
 
     it('should seed a many channel linked to many users', async () => {
@@ -248,7 +259,7 @@ describe('Seeder', () => {
     });
 
     afterEach(() => {
-      databaseWriter.database = {};
+      seeder.cleanUp();
     });
 
     it('should seed a subscritpion with a plan and a billing cycle', async () => {

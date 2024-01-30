@@ -27,6 +27,14 @@ export default class Seeder {
     }
   }
 
+  public async cleanUp(...factoryIDs: string[]) {
+    if (!this.writer) throw new Error('Writer is not set, please call setWriter() before seeding');
+
+    const factories = factoryIDs.length ? this.factories.filter((f) => factoryIDs.includes(f.id)) : this.factories;
+
+    await this.writer.cleanUp(factories.map((f) => f.tableName));
+  }
+
   public async seed(factoryID: string, args: SeederFactoryProviderArgs = {}) {
     if (!this.writer) throw new Error('Writer is not set, please call setWriter() before seeding');
 
