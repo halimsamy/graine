@@ -259,4 +259,17 @@ describe('Seeder', () => {
       expect(databaseWriter.database['billing_cycles'].length).toBe(1);
     });
   });
+
+  describe('Setting a writer', () => {
+    const seeder = new Seeder();
+
+    it('should throw an error if writer is not set', async () => {
+      await expect(seeder.seed('user')).rejects.toThrow('Writer is not set, please call setWriter() before seeding');
+    });
+
+    it('should not throw an error if writer is set', async () => {
+      seeder.setWriter(new InMemoryDatabaseWriter());
+      await expect(seeder.seed('user')).rejects.toThrow('Factory with id "user" was not found');
+    });
+  });
 });

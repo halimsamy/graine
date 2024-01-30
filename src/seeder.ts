@@ -4,8 +4,15 @@ import SeederFactory, { SeederFactoryProviderArgs } from './factory';
 
 export default class Seeder {
   private factories: SeederFactory[] = [];
+  private writer?: ISeederWriter;
 
-  constructor(private writer: ISeederWriter) {}
+  constructor(writer?: ISeederWriter) {
+    this.writer = writer;
+  }
+
+  public setWriter(writer: ISeederWriter) {
+    this.writer = writer;
+  }
 
   public getFactory(factoryID: string) {
     const factory = this.factories.find((f) => f.id === factoryID);
@@ -21,6 +28,8 @@ export default class Seeder {
   }
 
   public async seed(factoryID: string, args: SeederFactoryProviderArgs = {}) {
+    if (!this.writer) throw new Error('Writer is not set, please call setWriter() before seeding');
+
     const factory = this.getFactory(factoryID);
 
     const orginalArgsRefs = args?.refs;
