@@ -1,6 +1,8 @@
 # Graine
 Graine is a versatile Node.js tool that simplifies the process of populating databases with test data. It allows you to generate structured and realistic data, making it an essential tool for testing and development.
 
+<a href="https://www.buymeacoffee.com/halimsamy" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
 ## Features
 - Hierarchical Data Generation: Graine can create complex, nested data structures with ease, including one-to-one, one-to-many, many-to-many relationships, and even deep hierarchies.
 - Customizable Data Templates: You can tailor the generated data to match your database schema requirements, ensuring accurate testing scenarios.
