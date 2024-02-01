@@ -11,10 +11,10 @@ describe('One-to-One Ref', () => {
     name: 'user',
     tableName: 'users',
     primaryKey: 'userID',
-    provider: () => ({
-      name: faker.person.firstName(),
-      phone: faker.phone.imei(),
-      age: faker.number.int({ min: 18, max: 60 }),
+    provider: (args) => ({
+      name: args.name ?? faker.person.firstName(),
+      phone: args.phone ?? faker.phone.imei(),
+      age: args.age ?? faker.number.int({ min: 18, max: 60 }),
     }),
     refs: [ref({ factoryName: 'channel', foreignKey: 'channelID' })],
   });
@@ -23,8 +23,8 @@ describe('One-to-One Ref', () => {
     name: 'channel',
     tableName: 'channels',
     primaryKey: 'channelID',
-    provider: () => ({
-      name: faker.word.noun(),
+    provider: (args) => ({
+      name: args.name ?? faker.word.noun(),
     }),
     refs: [],
   });
