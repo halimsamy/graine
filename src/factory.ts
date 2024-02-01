@@ -7,7 +7,7 @@ export type SeederFactoryProviderArgs = {
 };
 
 export default abstract class SeederFactory {
-  abstract get id(): string;
+  abstract get name(): string;
   abstract get tableName(): string;
   abstract get primaryKey(): string;
 

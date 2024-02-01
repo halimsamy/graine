@@ -31,7 +31,7 @@ describe('Seeder', () => {
     const seeder = new Seeder(databaseWriter);
 
     seeder.addFactory({
-      id: 'user',
+      name: 'user',
       tableName: 'users',
       primaryKey: 'userID',
       provider: () => ({
@@ -39,11 +39,11 @@ describe('Seeder', () => {
         phone: faker.phone.imei(),
         age: faker.number.int({ min: 18, max: 60 }),
       }),
-      refs: [ref({ factory: 'channel', foreignKey: 'channelID' })],
+      refs: [ref({ factoryName: 'channel', foreignKey: 'channelID' })],
     });
 
     seeder.addFactory({
-      id: 'channel',
+      name: 'channel',
       tableName: 'channels',
       primaryKey: 'channelID',
       provider: () => ({
@@ -78,7 +78,7 @@ describe('Seeder', () => {
     });
 
     it('should throw an error if factory does not exist', async () => {
-      await expect(seeder.seed('unknown')).rejects.toThrow('Factory with id "unknown" was not found');
+      await expect(seeder.seed('unknown')).rejects.toThrow('Factory "unknown" was not found');
     });
   });
 
@@ -87,12 +87,12 @@ describe('Seeder', () => {
     const seeder = new Seeder(databaseWriter);
 
     class UserFactory extends SeederFactory {
-      id = 'user';
+      name = 'user';
       tableName = 'users';
       primaryKey = 'userID';
 
       get refs() {
-        return [ref({ factory: 'channel', foreignKey: 'channelID' })];
+        return [ref({ factoryName: 'channel', foreignKey: 'channelID' })];
       }
 
       provider() {
@@ -105,7 +105,7 @@ describe('Seeder', () => {
     }
 
     class ChannelFactory extends SeederFactory {
-      id = 'channel';
+      name = 'channel';
       tableName = 'channels';
       primaryKey = 'channelID';
 
@@ -145,7 +145,7 @@ describe('Seeder', () => {
     const seeder = new Seeder(databaseWriter);
 
     seeder.addFactory({
-      id: 'user',
+      name: 'user',
       tableName: 'users',
       primaryKey: 'userID',
       provider: () => ({
@@ -157,7 +157,7 @@ describe('Seeder', () => {
     });
 
     seeder.addFactory({
-      id: 'channel',
+      name: 'channel',
       tableName: 'channels',
       primaryKey: 'channelID',
       provider: () => ({
@@ -167,11 +167,11 @@ describe('Seeder', () => {
     });
 
     seeder.addFactory({
-      id: 'user_channel',
+      name: 'user_channel',
       tableName: 'user_channels',
       primaryKey: 'userChannelID',
       provider: () => ({}),
-      refs: [ref({ factory: 'user', foreignKey: 'userID' }), ref({ factory: 'channel', foreignKey: 'channelID' })],
+      refs: [ref({ factoryName: 'user', foreignKey: 'userID' }), ref({ factoryName: 'channel', foreignKey: 'channelID' })],
     });
 
     afterEach(() => {
@@ -229,17 +229,17 @@ describe('Seeder', () => {
     const seeder = new Seeder(databaseWriter);
 
     seeder.addFactory({
-      id: 'subscription',
+      name: 'subscription',
       tableName: 'subscriptions',
       primaryKey: 'subscriptionID',
       provider: () => ({
         name: faker.person.fullName(),
       }),
-      refs: [ref({ factory: 'plan', foreignKey: 'planID' }), ref({ factory: 'billing_cycle', foreignKey: 'billingCycleID' })],
+      refs: [ref({ factoryName: 'plan', foreignKey: 'planID' }), ref({ factoryName: 'billing_cycle', foreignKey: 'billingCycleID' })],
     });
 
     seeder.addFactory({
-      id: 'plan',
+      name: 'plan',
       tableName: 'plans',
       primaryKey: 'planID',
       provider: () => ({
@@ -249,13 +249,13 @@ describe('Seeder', () => {
     });
 
     seeder.addFactory({
-      id: 'billing_cycle',
+      name: 'billing_cycle',
       tableName: 'billing_cycles',
       primaryKey: 'billingCycleID',
       provider: () => ({
         name: faker.word.noun(),
       }),
-      refs: [ref({ factory: 'plan', foreignKey: 'planID' })],
+      refs: [ref({ factoryName: 'plan', foreignKey: 'planID' })],
     });
 
     afterEach(() => {
@@ -280,7 +280,7 @@ describe('Seeder', () => {
 
     it('should not throw an error if writer is set', async () => {
       seeder.setWriter(new InMemoryDatabaseWriter());
-      await expect(seeder.seed('user')).rejects.toThrow('Factory with id "user" was not found');
+      await expect(seeder.seed('user')).rejects.toThrow('Factory "user" was not found');
     });
   });
 });

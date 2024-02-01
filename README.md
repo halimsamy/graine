@@ -37,14 +37,14 @@ class MyDatabaseWriter implements ISeederWriter {
 Graine.setWriter(new MyDatabaseWriter());
 
 class UserFactory extends SeederFactory {
-  id = 'user';
+  name = 'user';
   tableName = 'users';
   primaryKey = 'userID';
   
   get refs() {
     return [
       ref({ 
-        factory: 'channel', // reference to the channel factory, which is defined below
+        factoryName: 'channel', // reference to the channel factory, which is defined below
         foreignKey: 'channelID'
       }) // one-to-many relationship with a foreign key
     ];
@@ -60,7 +60,7 @@ class UserFactory extends SeederFactory {
 }
 
 class ChannelFactory extends SeederFactory {
-  id = 'channel';
+  name = 'channel';
   tableName = 'channels';
   primaryKey = 'channelID';
 
@@ -102,7 +102,7 @@ const seeder = new Seeder(new MyDatabaseWriter());
 
 // Define data factories
 seeder.addFactory({
-  id: 'user',
+  name: 'user',
   tableName: 'users',
   primaryKey: 'userID',
   provider: () => ({
@@ -112,14 +112,14 @@ seeder.addFactory({
   }),
   refs: [
     ref({ 
-      factory: 'channel', // reference to the channel factory, which is defined below
+      factoryName: 'channel', // reference to the channel factory, which is defined below
       foreignKey: 'channelID'
      }) // one-to-many relationship with a foreign key
   ],
 });
 
 seeder.addFactory({
-  id: 'channel',
+  name: 'channel',
   tableName: 'channels',
   primaryKey: 'channelID',
   provider: () => ({
