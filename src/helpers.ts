@@ -8,3 +8,9 @@ export function combineAsKeyValuePairs<T extends string | number | symbol, U>(ke
     return acc;
   }, {} as Record<T, U>);
 }
+
+type Function<T> = () => T;
+
+export function executeIfFunction<T>(value: T | Function<T>): T {
+  return typeof value === 'function' ? (value as Function<T>)() : value;
+}

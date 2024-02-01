@@ -1,7 +1,7 @@
 import ISeederWriter from './writer';
 import SeederRef from './ref';
 import SeederFactory from './factory';
-import { Any, combineAsKeyValuePairs } from './helpers';
+import { Any, combineAsKeyValuePairs, executeIfFunction } from './helpers';
 
 export default class Seeder {
   private factories: SeederFactory[] = [];
@@ -48,7 +48,7 @@ export default class Seeder {
   }
 
   private async getForeignKeyOfRef(ref: SeederRef, args: Any): Promise<number | null> {
-    const providedForeignKey = args[ref.foreignKey];
+    const providedForeignKey = await executeIfFunction(args[ref.foreignKey]);
 
     return providedForeignKey ?? await this.seed(ref.factoryName);
   }

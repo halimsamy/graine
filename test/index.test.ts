@@ -77,6 +77,26 @@ describe('Seeder', () => {
       expect(users[0].channelID).toBe(1);
     });
 
+    it('should seed a single user and a channel correspondent with a custom name', async () => {
+      await seeder.seed('user', { 
+        name: 'John Doe',
+        channelID: () => seeder.seed('channel', {
+          name: 'Channel 1',
+        }),
+      });
+
+      const channels = databaseWriter.database['channels'];
+      expect(channels.length).toBe(1);
+      expect(channels[0].channelID).toBe(1);
+      expect(channels[0].name).toBe('Channel 1');
+
+      const users = databaseWriter.database['users'];
+      expect(users.length).toBe(1);
+      expect(users[0].userID).toBe(1);
+      expect(users[0].channelID).toBe(1);
+      expect(users[0].name).toBe('John Doe');
+    });
+
     it('should throw an error if factory does not exist', async () => {
       await expect(seeder.seed('unknown')).rejects.toThrow('Factory "unknown" was not found');
     });
