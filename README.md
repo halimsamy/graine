@@ -71,8 +71,8 @@ class ChannelFactory extends SeederFactory {
   }
 }
 
-Graine.addFactory(new UserFactory());
-Graine.addFactory(new ChannelFactory());
+Graine.register(new UserFactory());
+Graine.register(new ChannelFactory());
 
 // Seed users each with different channel
 await Graine.seed('user'); // seed one user, with a random channel
@@ -101,7 +101,7 @@ const { faker } = require('@faker-js/faker');
 const seeder = new Seeder(new MyDatabaseWriter());
 
 // Define data factories
-seeder.addFactory({
+seeder.register({
   name: 'user',
   tableName: 'users',
   primaryKey: 'userID',
@@ -118,7 +118,7 @@ seeder.addFactory({
   ],
 });
 
-seeder.addFactory({
+seeder.register({
   name: 'channel',
   tableName: 'channels',
   primaryKey: 'channelID',

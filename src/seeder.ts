@@ -14,13 +14,7 @@ export default class Seeder {
     this.writer = writer;
   }
 
-  public getFactory(factoryName: string) {
-    const factory = this.factories.find((f) => f.name === factoryName);
-    if (!factory) throw new Error(`Factory "${factoryName}" was not found`);
-    return factory;
-  }
-
-  public addFactory(...factories: SeederFactory[]) {
+  public register(...factories: SeederFactory[]) {
     for (const factory of factories) {
       if (this.factories.find((f) => f.name === factory.name)) throw new Error(`Factory "${factory.name}" already exists`);
       this.factories.push(factory);
@@ -58,6 +52,12 @@ export default class Seeder {
     const data = factory.provider(args);
     const id = await this.writer!.insert(factory.tableName, factory.primaryKey, { ...data, ...refIDs });
     return id;
+  }
+
+  private getFactory(factoryName: string) {
+    const factory = this.factories.find((f) => f.name === factoryName);
+    if (!factory) throw new Error(`Factory "${factoryName}" was not found`);
+    return factory;
   }
 
   private validateWriter() {

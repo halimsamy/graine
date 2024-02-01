@@ -30,7 +30,7 @@ describe('Seeder', () => {
     const databaseWriter = new InMemoryDatabaseWriter();
     const seeder = new Seeder(databaseWriter);
 
-    seeder.addFactory({
+    seeder.register({
       name: 'user',
       tableName: 'users',
       primaryKey: 'userID',
@@ -42,7 +42,7 @@ describe('Seeder', () => {
       refs: [ref({ factoryName: 'channel', foreignKey: 'channelID' })],
     });
 
-    seeder.addFactory({
+    seeder.register({
       name: 'channel',
       tableName: 'channels',
       primaryKey: 'channelID',
@@ -116,7 +116,7 @@ describe('Seeder', () => {
       }
     }
 
-    seeder.addFactory(new UserFactory(), new ChannelFactory());
+    seeder.register(new UserFactory(), new ChannelFactory());
 
     afterEach(() => {
       seeder.cleanUp();
@@ -144,7 +144,7 @@ describe('Seeder', () => {
     const databaseWriter = new InMemoryDatabaseWriter();
     const seeder = new Seeder(databaseWriter);
 
-    seeder.addFactory({
+    seeder.register({
       name: 'user',
       tableName: 'users',
       primaryKey: 'userID',
@@ -156,7 +156,7 @@ describe('Seeder', () => {
       refs: [],
     });
 
-    seeder.addFactory({
+    seeder.register({
       name: 'channel',
       tableName: 'channels',
       primaryKey: 'channelID',
@@ -166,7 +166,7 @@ describe('Seeder', () => {
       refs: [],
     });
 
-    seeder.addFactory({
+    seeder.register({
       name: 'user_channel',
       tableName: 'user_channels',
       primaryKey: 'userChannelID',
@@ -228,7 +228,7 @@ describe('Seeder', () => {
     const databaseWriter = new InMemoryDatabaseWriter();
     const seeder = new Seeder(databaseWriter);
 
-    seeder.addFactory({
+    seeder.register({
       name: 'subscription',
       tableName: 'subscriptions',
       primaryKey: 'subscriptionID',
@@ -238,7 +238,7 @@ describe('Seeder', () => {
       refs: [ref({ factoryName: 'plan', foreignKey: 'planID' }), ref({ factoryName: 'billing_cycle', foreignKey: 'billingCycleID' })],
     });
 
-    seeder.addFactory({
+    seeder.register({
       name: 'plan',
       tableName: 'plans',
       primaryKey: 'planID',
@@ -248,7 +248,7 @@ describe('Seeder', () => {
       refs: [],
     });
 
-    seeder.addFactory({
+    seeder.register({
       name: 'billing_cycle',
       tableName: 'billing_cycles',
       primaryKey: 'billingCycleID',
