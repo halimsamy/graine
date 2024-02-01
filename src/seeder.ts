@@ -50,6 +50,10 @@ export default class Seeder {
   private async getForeignKeyOfRef(ref: SeederRef, args: Any): Promise<number | null> {
     const providedForeignKey = await executeIfFunction(args[ref.foreignKey]);
 
+    if (ref.optional && providedForeignKey === null) {
+      return null;
+    }
+
     return providedForeignKey ?? await this.seed(ref.factoryName);
   }
 
