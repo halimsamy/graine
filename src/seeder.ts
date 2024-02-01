@@ -28,15 +28,15 @@ export default class Seeder {
   }
 
   public async cleanUp(...factoryNames: string[]) {
-    if (!this.writer) throw new Error('Writer is not set, please call setWriter() before seeding');
+    this.validateWriter();
 
     const factories = factoryNames.length ? this.factories.filter((f) => factoryNames.includes(f.name)) : this.factories;
 
-    await this.writer.cleanUp(factories.map((f) => f.tableName));
+    await this.writer!.cleanUp(factories.map((f) => f.tableName));
   }
 
   public async seed(factoryName: string, args: SeederFactoryProviderArgs = {}) {
-    if (!this.writer) throw new Error('Writer is not set, please call setWriter() before seeding');
+    this.validateWriter();
 
     const factory = this.getFactory(factoryName);
 
@@ -56,7 +56,11 @@ export default class Seeder {
     }
 
     const data = factory.provider(args);
-    const id = await this.writer.insert(factory.tableName, factory.primaryKey, { ...data, ...refIDs });
+    const id = await this.writer!.insert(factory.tableName, factory.primaryKey, { ...data, ...refIDs });
     return id;
+  }
+
+  private validateWriter() {
+    if (!this.writer) throw new Error('Writer is not set, please call setWriter() before seeding or cleanning up');
   }
 }
