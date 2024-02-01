@@ -1,6 +1,7 @@
 import ISeederWriter from './writer';
-import { RefMap } from './ref';
-import SeederFactory, { SeederFactoryProviderArgs } from './factory';
+import SeederRef from './ref';
+import SeederFactory from './factory';
+import { Any, combineAsKeyValuePairs } from './helpers';
 
 export default class Seeder {
   private factories: SeederFactory[] = [];
@@ -30,29 +31,30 @@ export default class Seeder {
     await this.writer!.cleanUp(factories.map((f) => f.tableName));
   }
 
-  public async seed(factoryName: string, args: SeederFactoryProviderArgs = {}) {
+  public async seed(factoryName: string, args: Any = {}) {
     this.validateWriter();
 
     const factory = this.getFactory(factoryName);
 
-    const orginalArgsRefs = args?.refs;
     const refs = factory.refs || [];
-    const refIDs: RefMap = {};
-    const refsFactoryNames: RefMap = {};
+    const foreignKeys = await this.getForeignKeysOfRefs(refs, args);
+    const foreignKeyMap = combineAsKeyValuePairs(refs.map(ref => ref.foreignKey), foreignKeys);
+    const argsWithForeignKeys = { ...args, ...foreignKeyMap };
+  
+    const data = factory.provider(argsWithForeignKeys);
+    const id = await this.writer!.insert(factory.tableName, factory.primaryKey, { ...data, ...argsWithForeignKeys });
 
-    for (const ref of refs) {
-      const refFactory = this.getFactory(ref.factoryName);
-      const refRefs = refFactory.refs?.reduce((acc, ref) => ({ ...acc, [ref.foreignKey]: refsFactoryNames[ref.factoryName] }), {});
-      args.refs = { ...refRefs, ...orginalArgsRefs };
-      const refID = args?.refs?.[ref.foreignKey] || (await this.seed(ref.factoryName, args));
-      args.refs = orginalArgsRefs;
-      refIDs[ref.foreignKey] = refID;
-      refsFactoryNames[ref.factoryName] = refID;
-    }
-
-    const data = factory.provider(args);
-    const id = await this.writer!.insert(factory.tableName, factory.primaryKey, { ...data, ...refIDs });
     return id;
+  }
+
+  private async getForeignKeyOfRef(ref: SeederRef, args: Any): Promise<number | null> {
+    const providedForeignKey = args[ref.foreignKey];
+
+    return providedForeignKey ?? await this.seed(ref.factoryName);
+  }
+
+  private getForeignKeysOfRefs(refs: SeederRef[], args: Any): Promise<Array<number | null>> {
+    return Promise.all(refs.map((ref) => this.getForeignKeyOfRef(ref, args)));
   }
 
   private getFactory(factoryName: string) {

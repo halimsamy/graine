@@ -1,10 +1,5 @@
-import SeederRef, { RefMap } from './ref';
-
-export type SeederFactoryProviderArgs = {
-  refs?: RefMap;
-  // rome-ignore lint: user defined args, we don't know what the type of the property is.
-  [key: string]: any;
-};
+import SeederRef from './ref';
+import { Any } from './helpers';
 
 export default abstract class SeederFactory {
   abstract get name(): string;
@@ -15,5 +10,5 @@ export default abstract class SeederFactory {
     return [];
   }
 
-  public abstract provider(args: SeederFactoryProviderArgs): object;
+  public abstract provider(args: Any): object;
 }

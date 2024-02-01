@@ -5,5 +5,3 @@ export default class SeederRef {
 export function ref(args: { factoryName: string; foreignKey: string }) {
   return new SeederRef(args.factoryName, args.foreignKey);
 }
-
-export type RefMap = { [key: string]: string | number };

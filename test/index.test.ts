@@ -125,8 +125,8 @@ describe('Seeder', () => {
     it('should seed a single channel linked to many users', async () => {
       const channelID = await seeder.seed('channel');
 
-      await seeder.seed('user', { refs: { channelID } });
-      await seeder.seed('user', { refs: { channelID } });
+      await seeder.seed('user', { channelID });
+      await seeder.seed('user', { channelID });
 
       const channels = databaseWriter.database['channels'];
       expect(channels.length).toBe(1);
@@ -184,10 +184,10 @@ describe('Seeder', () => {
       const userID1 = await seeder.seed('user');
       const userID2 = await seeder.seed('user');
 
-      await seeder.seed('user_channel', { refs: { userID: userID1, channelID: channelID1 } });
-      await seeder.seed('user_channel', { refs: { userID: userID2, channelID: channelID1 } });
-      await seeder.seed('user_channel', { refs: { userID: userID1, channelID: channelID2 } });
-      await seeder.seed('user_channel', { refs: { userID: userID2, channelID: channelID2 } });
+      await seeder.seed('user_channel', { userID: userID1, channelID: channelID1 });
+      await seeder.seed('user_channel', { userID: userID2, channelID: channelID1 });
+      await seeder.seed('user_channel', { userID: userID1, channelID: channelID2 });
+      await seeder.seed('user_channel', { userID: userID2, channelID: channelID2 });
 
       const channels = databaseWriter.database['channels'];
       expect(channels.length).toBe(2);
@@ -263,7 +263,9 @@ describe('Seeder', () => {
     });
 
     it('should seed a subscritpion with a plan and a billing cycle', async () => {
-      await seeder.seed('subscription');
+      const planID = await seeder.seed('plan');
+      const billingCycleID = await seeder.seed('billing_cycle', { planID });
+      await seeder.seed('subscription', { planID, billingCycleID });
 
       expect(databaseWriter.database['subscriptions'].length).toBe(1);
       expect(databaseWriter.database['plans'].length).toBe(1);
