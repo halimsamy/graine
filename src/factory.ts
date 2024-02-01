@@ -1,3 +1,4 @@
+import Seeder from './seeder';
 import SeederRef from './ref';
 import { Any } from './helpers';
 
@@ -10,5 +11,5 @@ export default abstract class SeederFactory {
     return [];
   }
 
-  public abstract provider(args: Any): object;
+  public abstract provider(args: Any, seeder: Seeder): object | Promise<object>;
 }

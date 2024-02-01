@@ -41,7 +41,7 @@ export default class Seeder {
     const foreignKeyMap = combineAsKeyValuePairs(refs.map(ref => ref.foreignKey), foreignKeys);
     const argsWithForeignKeys = { ...args, ...foreignKeyMap };
   
-    const data = factory.provider(argsWithForeignKeys);
+    const data = await factory.provider(argsWithForeignKeys, this);
     const id = await this.writer!.insert(factory.tableName, factory.primaryKey, { ...data, ...argsWithForeignKeys });
 
     return id;
