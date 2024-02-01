@@ -14,11 +14,12 @@ export default class Seeder {
     this.writer = writer;
   }
 
-  public register(...factories: SeederFactory[]) {
-    for (const factory of factories) {
-      if (this.factories.find((f) => f.name === factory.name)) throw new Error(`Factory "${factory.name}" already exists`);
-      this.factories.push(factory);
-    }
+  public register(...factories: SeederFactory[]): boolean {
+    if (factories.some((f1) => this.factories.some((f2) => f1.name === f2.name))) return false;
+
+    this.factories.push(...factories);
+
+    return true;
   }
 
   public async cleanUp(...factoryNames: string[]) {
