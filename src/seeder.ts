@@ -32,19 +32,37 @@ export default class Seeder {
   }
 
   public async seed(factoryName: string, args: Any = {}) {
+    const [id] = await this.seedMany(factoryName, { args, count: 1 });
+
+    return id;
+  }
+
+  public async seedMany(factoryName: string, { args = {}, count = 1 }: { args?: Any; count: number }) {
     this.validateWriter();
 
     const factory = this.getFactory(factoryName);
 
-    const refs = factory.refs || [];
-    const foreignKeys = await this.getForeignKeysOfRefs(refs, args);
-    const foreignKeyMap = combineAsKeyValuePairs(refs.map(ref => ref.foreignKey), foreignKeys);
-    const argsWithForeignKeys = { ...args, ...foreignKeyMap };
-  
-    const data = await factory.provider(argsWithForeignKeys, this);
-    const id = await this.writer!.insert(factory.tableName, factory.primaryKey, { ...data, ...foreignKeyMap });
+    const foreignKeys = await this.getForeignKeysOfRefs(factory.refs, args);
+    const argsWithForeignKeys = { ...args, ...foreignKeys };
 
-    return id;
+    const promises = Array.from({ length: count }).map(async () => {
+      const data = await factory.provider(argsWithForeignKeys);
+      const id = await this.writer!.insert(factory.tableName, factory.primaryKey, { ...data, ...foreignKeys });
+
+      return id;
+    });
+
+    return Promise.all(promises);
+  }
+
+  private async getForeignKeysOfRefs(refs: SeederRef[], args: Any) {
+    if (!refs || !refs.length) return {};
+
+    const foreignKeys = await Promise.all(refs.map((ref) => this.getForeignKeyOfRef(ref, args)));
+    return combineAsKeyValuePairs(
+      refs.map((ref) => ref.foreignKey),
+      foreignKeys,
+    );
   }
 
   private async getForeignKeyOfRef(ref: SeederRef, args: Any): Promise<number | null> {
@@ -54,11 +72,7 @@ export default class Seeder {
       return null;
     }
 
-    return providedForeignKey ?? await this.seed(ref.factoryName);
-  }
-
-  private getForeignKeysOfRefs(refs: SeederRef[], args: Any): Promise<Array<number | null>> {
-    return Promise.all(refs.map((ref) => this.getForeignKeyOfRef(ref, args)));
+    return providedForeignKey ?? (await this.seed(ref.factoryName));
   }
 
   private getFactory(factoryName: string) {
