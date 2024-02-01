@@ -16,7 +16,7 @@ describe('Async factory provider', () => {
         name: args.name ?? faker.person.firstName(),
         phone: faker.phone.imei(),
         age: faker.number.int({ min: 18, max: 60 }),
-      }
+      };
     },
     refs: [ref({ factoryName: 'channel', foreignKey: 'channelID' })],
   });

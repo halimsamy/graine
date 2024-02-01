@@ -28,7 +28,7 @@ export default class Seeder {
 
     const factories = factoryNames.length ? this.factories.filter((f) => factoryNames.includes(f.name)) : this.factories;
 
-    await this.writer!.cleanUp(factories.map((f) => f.tableName));
+    await this.writer?.cleanUp(factories.map((f) => f.tableName));
   }
 
   public async seed(factoryName: string, args: Any = {}) {
@@ -47,7 +47,7 @@ export default class Seeder {
 
     const promises = Array.from({ length: count }).map(async () => {
       const data = await factory.provider(argsWithForeignKeys);
-      const id = await this.writer!.insert(factory.tableName, factory.primaryKey, { ...data, ...foreignKeys });
+      const id = await this.writer?.insert(factory.tableName, factory.primaryKey, { ...data, ...foreignKeys });
 
       return id;
     });

@@ -55,11 +55,12 @@ describe('One-to-One Ref', () => {
   });
 
   it('should seed a single user and a channel correspondent with a custom name', async () => {
-    await seeder.seed('user', { 
+    await seeder.seed('user', {
       name: 'John Doe',
-      channelID: () => seeder.seed('channel', {
-        name: 'Channel 1',
-      }),
+      channelID: () =>
+        seeder.seed('channel', {
+          name: 'Channel 1',
+        }),
     });
 
     const channels = databaseWriter.database['channels'];

@@ -16,11 +16,13 @@ describe('Optional Ref', () => {
       phone: faker.phone.imei(),
       age: faker.number.int({ min: 18, max: 60 }),
     }),
-    refs: [ref({
-      factoryName: 'channel', 
-      foreignKey: 'channelID',
-      optional: true,
-    })],
+    refs: [
+      ref({
+        factoryName: 'channel',
+        foreignKey: 'channelID',
+        optional: true,
+      }),
+    ],
   });
 
   seeder.register({
@@ -75,6 +77,7 @@ describe('Optional Ref', () => {
   });
 
   it('should seed a single user and a channel correspondent when ref is undefined', async () => {
+    // rome-ignore lint: any is used to simulate undefined
     const channelID: any = undefined;
     await seeder.seed('user', { channelID });
 

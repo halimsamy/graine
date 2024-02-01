@@ -1,8 +1,8 @@
-import { ISeederWriter } from "../../src";
+import { ISeederWriter } from '../../src';
+import { Any } from '../../src/helpers';
 
 export default class InMemoryDatabaseWriter implements ISeederWriter {
-  // rome-ignore lint: we don't know what the type of the property is.
-  public database: any = {};
+  public database: Any;
 
   async insert(tableName: string, primaryKey: string, data: object): Promise<number> {
     if (!this.database[tableName]) this.database[tableName] = [];
