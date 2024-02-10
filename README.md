@@ -81,6 +81,9 @@ await Graine.seed('user'); // seed another user, with a another random channel
 // Seed multiple users, with the same channel
 await Graine.seedMany('user', { count: 2 });
 
+// Seed multiple users, with the different channels
+await Graine.seedMany('user', { count: 2, resuseRefs: false });
+
 // Another way to seed multiple users, with the same channel
 const channelID = await Graine.seed('channel'); // seed one channel
 

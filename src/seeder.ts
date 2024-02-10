@@ -3,6 +3,12 @@ import SeederRef from './ref';
 import SeederFactory from './factory';
 import { Any, combineAsKeyValuePairs, executeIfFunction } from './helpers';
 
+type SeedManyArgs = {
+  args?: Any;
+  count: number;
+  reuseRefs?: boolean;
+};
+
 export default class Seeder {
   private factories: SeederFactory[] = [];
   private writer?: ISeederWriter;
@@ -37,22 +43,26 @@ export default class Seeder {
     return id;
   }
 
-  public async seedMany(factoryName: string, { args = {}, count = 1 }: { args?: Any; count: number }) {
+  public async seedMany(factoryName: string, { args = {}, count = 1, reuseRefs = true }: SeedManyArgs) {
     this.validateWriter();
 
     const factory = this.getFactory(factoryName);
 
-    const foreignKeys = await this.getForeignKeysOfRefs(factory.refs, args);
-    const argsWithForeignKeys = { ...args, ...foreignKeys };
+    const foreignKeys = reuseRefs ? await this.getForeignKeysOfRefs(factory.refs, args) : undefined;
 
-    const promises = Array.from({ length: count }).map(async () => {
-      const data = await factory.provider(argsWithForeignKeys);
-      const id = await this.writer?.insert(factory.tableName, factory.primaryKey, { ...data, ...foreignKeys });
-
-      return id;
-    });
+    const promises = Array.from({ length: count }).map(() => this.seedFactory(factory, args, foreignKeys));
 
     return Promise.all(promises);
+  }
+
+  private async seedFactory(factory: SeederFactory, args: Any, foreignKeys?: Record<string, number | null>) {
+    foreignKeys ||= await this.getForeignKeysOfRefs(factory.refs, args);
+    const argsWithForeignKeys = { ...args, ...foreignKeys };
+
+    const data = await factory.provider(argsWithForeignKeys);
+    const id = await this.writer?.insert(factory.tableName, factory.primaryKey, { ...data, ...foreignKeys });
+
+    return id;
   }
 
   private async getForeignKeysOfRefs(refs: SeederRef[], args: Any) {
