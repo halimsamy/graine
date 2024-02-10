@@ -2,7 +2,7 @@ import { ISeederWriter } from '../../src';
 import { Any } from '../../src/helpers';
 
 export default class InMemoryDatabaseWriter implements ISeederWriter {
-  public database: Any;
+  public database: Any = {};
 
   async insert(tableName: string, primaryKey: string, data: object): Promise<number> {
     if (!this.database[tableName]) this.database[tableName] = [];
