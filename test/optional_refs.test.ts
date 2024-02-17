@@ -52,7 +52,7 @@ describe('Optional Ref', () => {
   });
 
   it('should seed a single user with a specific channel', async () => {
-    const channelID = await seeder.seed('channel');
+    const [channelID] = await seeder.seed('channel');
     await seeder.seed('user', { channelID });
 
     const channels = databaseWriter.database['channels'];

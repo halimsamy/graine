@@ -34,7 +34,7 @@ describe('Seed many', () => {
   });
 
   it('should seed a 2 users with the same channel', async () => {
-    const [userID1, userID2] = await seeder.seedMany('user', {
+    const [[userID1], [userID2]] = await seeder.seedMany('user', {
       args: {
         name: 'John Doe',
       },
@@ -58,8 +58,8 @@ describe('Seed many', () => {
   });
 
   it('should seed a 2 users with the same channel', async () => {
-    const channelID = await seeder.seed('channel');
-    const [userID1, userID2] = await seeder.seedMany('user', {
+    const [channelID] = await seeder.seed('channel');
+    const [[userID1], [userID2]] = await seeder.seedMany('user', {
       args: {
         name: 'John Doe',
         channelID,
@@ -84,7 +84,7 @@ describe('Seed many', () => {
   });
 
   it('should seed a 2 users with the different channels', async () => {
-    const [userID1, userID2] = await seeder.seedMany('user', {
+    const [[userID1], [userID2]] = await seeder.seedMany('user', {
       args: {
         name: 'John Doe',
       },

@@ -42,10 +42,10 @@ describe('Many-to-Many Ref', () => {
   });
 
   it('should seed a many channel linked to many users', async () => {
-    const channelID1 = await seeder.seed('channel');
-    const channelID2 = await seeder.seed('channel');
-    const userID1 = await seeder.seed('user');
-    const userID2 = await seeder.seed('user');
+    const [channelID1] = await seeder.seed('channel');
+    const [channelID2] = await seeder.seed('channel');
+    const [userID1] = await seeder.seed('user');
+    const [userID2] = await seeder.seed('user');
 
     await seeder.seed('user_channel', { userID: userID1, channelID: channelID1 });
     await seeder.seed('user_channel', { userID: userID2, channelID: channelID1 });
@@ -71,7 +71,7 @@ describe('Many-to-Many Ref', () => {
   });
 
   it('should seed a user_channel with a user and a channel correspondent', async () => {
-    await seeder.seed('user_channel');
+    const [, , meta] = await seeder.seed('user_channel');
 
     const channels = databaseWriter.database['channels'];
     expect(channels.length).toBe(1);
@@ -84,5 +84,9 @@ describe('Many-to-Many Ref', () => {
     expect(user_channels[0].userChannelID).toBe(1);
     expect(user_channels[0].userID).toBe(1);
     expect(user_channels[0].channelID).toBe(1);
+
+    expect(meta['user_channel']).toEqual(databaseWriter.database['user_channels'][0]);
+    expect(meta['user']).toEqual(users[0]);
+    expect(meta['channel']).toEqual(channels[0]);
   });
 });

@@ -19,7 +19,8 @@ npm install -D graine
 ```
 
 ### Usage
-#### Using Classes
+This example demonstrates seeding data for `user`(s) and `channel`(s), since having a user requires a channel, we use `refs` to define the relationship between the two and the seeder will automatically handle the relationship. You can configure factories according to your project's needs.
+
 ```typescript
 import Graine, { SeederFactory, ISeederWriter } from 'graine';
 import { faker } from '@faker-js/faker';
@@ -50,7 +51,7 @@ class UserFactory extends SeederFactory {
     ];
   }
 
-  provider() {
+  provider(args, meta) {
     return {
       name: faker.person.firstName(),
       phone: faker.phone.imei(),
@@ -64,7 +65,7 @@ class ChannelFactory extends SeederFactory {
   tableName = 'channels';
   primaryKey = 'channelID';
 
-  provider() {
+  provider(args, meta) {
     return {
       name: faker.word.noun(),
     };
@@ -91,46 +92,126 @@ Graine.cleanUp('users', 'channels');
 Graine.cleanUp();
 ```
 
-#### More of a JavaScript person?
+#### Showcase (Messaging App)
+This example demonstrates a messaging app scenario, where we have users, channels, channel users, and messages. We use `refs` to define the relationships between the factories, and the seeder will automatically handle the relationships.
+
 ```javascript
-const { Seeder, SeederFactory, ref } = require('graine');
-const { faker } = require('@faker-js/faker');
+class UserFactory extends SeederFactory {
+  name = 'user';
+  tableName = 'users';
+  primaryKey = 'userID';
 
-// Initialize Seeder (you can use the default exported Graine instance)
-const seeder = new Seeder(new MyDatabaseWriter());
+  provider(args, meta) {
+    return {
+      name: args.name ?? faker.person.firstName(),
+      phone: args.phone ?? faker.phone.imei(),
+      age: args.age ?? faker.number.int({ min: 18, max: 60 }),
+    };
+  }
+}
 
-// Define data factories
-seeder.register({
-  name: 'user',
-  tableName: 'users',
-  primaryKey: 'userID',
-  provider: () => ({
-    name: faker.person.firstName(),
-    phone: faker.phone.imei(),
-    age: faker.number.int({ min: 18, max: 60 }),
-  }),
-  refs: [
-    ref({ 
-      factoryName: 'channel', // reference to the channel factory, which is defined below
-      foreignKey: 'channelID'
-     }) // one-to-many relationship with a foreign key
-  ],
+class ChannelFactory extends SeederFactory {
+  name = 'channel';
+  tableName = 'channels';
+  primaryKey = 'channelID';
+
+    get refs() {
+    return [
+      ref({ 
+        factoryName: 'user',
+        foreignKey: 'createdBy'
+      })
+    ];
+  }
+
+  provider(args, meta) {
+    return {
+      name: args.name ?? faker.word.noun(),
+    };
+  }
+}
+
+class ChannelUserFactory extends SeederFactory {
+  name = 'channel_user';
+  tableName = 'channel_user';
+  primaryKey = 'id';
+
+  get refs() {
+    return [
+      ref({ 
+        factoryName: 'channel',
+        foreignKey: 'channelID'
+      }),
+      ref({ 
+        factoryName: 'user',
+        foreignKey: 'userID'
+      })
+    ];
+  }
+
+  provider(args, meta) {
+    return {
+      joinedAt: args.joinedAt ?? faker.date.recent(),
+    };
+  }
+}
+
+class MessageFactory extends SeederFactory {
+  name = 'message';
+  tableName = 'messages';
+  primaryKey = 'messageID';
+
+  get refs() {
+    return [
+      ref({ 
+        factoryName: 'user',
+        foreignKey: 'sentBy'
+      }),
+      ref({ 
+        factoryName: 'channel',
+        foreignKey: 'channelID'
+      })
+    ];
+  }
+
+  provider(args, meta) {
+    return {
+      content: args.content ?? faker.lorem.sentence(),
+      sentAt: args.sentAt ?? faker.date.recent(),
+    };
+  }
+}
+
+Graine.register(new UserFactory());
+Graine.register(new ChannelFactory());
+Graine.register(new ChannelUserFactory());
+Graine.register(new MessageFactory());
+
+describe('Messaging', () => {
+  afterEach(() => {
+    Graine.cleanUp();
+  });
+
+  it('should not allow non-channel users to send messages', async () => {
+    const channelOwner = await Graine.seedObject('user');
+    const [,, { channel }] = await Graine.seed('channel_user', { 
+      userID: channelOwner, 
+      channelID: () => Graine.seedObject('channel', { createdBy: channelOwner.userID })
+    });
+
+    const nonChannelUser = await Graine.seedObject('user');
+
+    const subject = MessagineService.sendMessage({
+      content: 'Hello, World!',
+      sentBy: nonChannelUser.userID,
+      channelID: channel.channelID,
+    });
+
+    await expect(subject).rejects.toThrowError('User is not a member of the channel');
+  });
 });
 
-seeder.register({
-  name: 'channel',
-  tableName: 'channels',
-  primaryKey: 'channelID',
-  provider: () => ({
-    name: faker.word.noun(),
-  }),
-  refs: [] // no references, e.g. this table doesn't have any foreign keys
-});
-
-await seeder.seed('user'); // seed one user, with a random channel
 ```
-
-This example demonstrates seeding data for `user`(s) and `channel`(s), since having a user requires a channel, we use `refs` to define the relationship between the two and the seeder will automatically handle the relationship. You can configure factories according to your project's needs.
 
 ## Tests
 Graine is thoroughly tested to ensure its reliability and functionality. You can find various test cases in the `test` folder, covering scenarios like one-to-one, one-to-many, many-to-many relationships, and deep hierarchies.

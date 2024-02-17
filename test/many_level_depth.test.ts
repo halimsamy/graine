@@ -11,8 +11,9 @@ describe('Many-level-depth Ref', () => {
     name: 'subscription',
     tableName: 'subscriptions',
     primaryKey: 'subscriptionID',
-    provider: () => ({
+    provider: (args, meta) => ({
       name: faker.person.fullName(),
+      days: meta.plan?.days || 0,
     }),
     refs: [ref({ factoryName: 'plan', foreignKey: 'planID' }), ref({ factoryName: 'billing_cycle', foreignKey: 'billingCycleID' })],
   });
@@ -21,9 +22,12 @@ describe('Many-level-depth Ref', () => {
     name: 'plan',
     tableName: 'plans',
     primaryKey: 'planID',
-    provider: () => ({
-      name: faker.word.noun(),
-    }),
+    provider: () => {
+      return {
+        name: faker.word.noun(),
+        days: faker.number.int({ min: 1, max: 30 }),
+      };
+    },
     refs: [],
   });
 
@@ -31,9 +35,11 @@ describe('Many-level-depth Ref', () => {
     name: 'billing_cycle',
     tableName: 'billing_cycles',
     primaryKey: 'billingCycleID',
-    provider: () => ({
-      name: faker.word.noun(),
-    }),
+    provider: () => {
+      return {
+        name: faker.word.noun(),
+      };
+    },
     refs: [ref({ factoryName: 'plan', foreignKey: 'planID' })],
   });
 
@@ -42,12 +48,13 @@ describe('Many-level-depth Ref', () => {
   });
 
   it('should seed a subscritpion with a plan and a billing cycle', async () => {
-    const planID = await seeder.seed('plan');
-    const billingCycleID = await seeder.seed('billing_cycle', { planID });
+    const [planID] = await seeder.seed('plan');
+    const [billingCycleID] = await seeder.seed('billing_cycle', { planID });
     await seeder.seed('subscription', { planID, billingCycleID });
 
     expect(databaseWriter.database['subscriptions'].length).toBe(1);
     expect(databaseWriter.database['plans'].length).toBe(1);
     expect(databaseWriter.database['billing_cycles'].length).toBe(1);
+    expect(databaseWriter.database['subscriptions'][0].days).toBe(0);
   });
 });

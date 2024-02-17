@@ -55,12 +55,9 @@ describe('One-to-One Ref', () => {
   });
 
   it('should seed a single user and a channel correspondent with a custom name', async () => {
-    await seeder.seed('user', {
+    const user = await seeder.seedObject('user', {
       name: 'John Doe',
-      channelID: () =>
-        seeder.seed('channel', {
-          name: 'Channel 1',
-        }),
+      channelID: () => seeder.seedObject('channel', { name: 'Channel 1' }),
     });
 
     const channels = databaseWriter.database['channels'];
@@ -70,9 +67,7 @@ describe('One-to-One Ref', () => {
 
     const users = databaseWriter.database['users'];
     expect(users.length).toBe(1);
-    expect(users[0].userID).toBe(1);
-    expect(users[0].channelID).toBe(1);
-    expect(users[0].name).toBe('John Doe');
+    expect(users[0]).toEqual(user);
   });
 
   it('should throw an error if factory does not exist', async () => {

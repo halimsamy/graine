@@ -38,9 +38,15 @@ export default class Seeder {
   }
 
   public async seed(factoryName: string, args: Any = {}) {
-    const [id] = await this.seedMany(factoryName, { args, count: 1 });
+    const [result] = await this.seedMany(factoryName, { args, count: 1 });
 
-    return id;
+    return result;
+  }
+
+  public async seedObject(factoryName: string, args: Any = {}) {
+    const [[_, object]] = await this.seedMany(factoryName, { args, count: 1 });
+
+    return object;
   }
 
   public async seedMany(factoryName: string, { args = {}, count = 1, reuseRefs = true }: SeedManyArgs) {
@@ -48,41 +54,70 @@ export default class Seeder {
 
     const factory = this.getFactory(factoryName);
 
-    const foreignKeys = reuseRefs ? await this.getForeignKeysOfRefs(factory.refs, args) : undefined;
+    const [foreignKeys, _, meta] = reuseRefs ? await this.getForeignKeysOfRefs(factory.refs, args) : [undefined, undefined, {}];
 
-    const promises = Array.from({ length: count }).map(() => this.seedFactory(factory, args, foreignKeys));
+    const promises = Array.from({ length: count }).map(() => this.seedFactory(factory, args, foreignKeys, meta));
 
     return Promise.all(promises);
   }
 
-  private async seedFactory(factory: SeederFactory, args: Any, foreignKeys?: Record<string, number | null>) {
-    foreignKeys ||= await this.getForeignKeysOfRefs(factory.refs, args);
+  private async seedFactory(
+    factory: SeederFactory,
+    args: Any,
+    foreignKeys?: Record<string, number | null | undefined>,
+    meta?: object,
+  ): Promise<[number | undefined, object, object]> {
+    if (!foreignKeys) {
+      [foreignKeys, , meta] = await this.getForeignKeysOfRefs(factory.refs, args);
+    }
+
     const argsWithForeignKeys = { ...args, ...foreignKeys };
 
-    const data = await factory.provider(argsWithForeignKeys);
-    const id = await this.writer?.insert(factory.tableName, factory.primaryKey, { ...data, ...foreignKeys });
+    const data = await factory.provider(argsWithForeignKeys, meta || {});
+    const dataWithForeignKeys = { ...data, ...foreignKeys };
+    const id = await this.writer?.insert(factory.tableName, factory.primaryKey, dataWithForeignKeys);
 
-    return id;
+    dataWithForeignKeys[factory.primaryKey] = id;
+    return [id, dataWithForeignKeys, { ...meta, [factory.name]: dataWithForeignKeys }];
   }
 
-  private async getForeignKeysOfRefs(refs: SeederRef[], args: Any) {
-    if (!refs || !refs.length) return {};
+  private async getForeignKeysOfRefs(refs: SeederRef[], args: Any): Promise<[Record<string, number | null | undefined>, Record<string, object>, Record<string, object>]> {
+    if (!refs || !refs.length) return [{}, {}, {}];
 
-    const foreignKeys = await Promise.all(refs.map((ref) => this.getForeignKeyOfRef(ref, args)));
-    return combineAsKeyValuePairs(
-      refs.map((ref) => ref.foreignKey),
-      foreignKeys,
-    );
+    const results = await Promise.all(refs.map((ref) => this.getForeignKeyOfRef(ref, args)));
+    return [
+      combineAsKeyValuePairs(
+        refs.map((ref) => ref.foreignKey),
+        results.map(([foreignKey]) => foreignKey),
+      ),
+      combineAsKeyValuePairs(
+        refs.map((ref) => ref.factoryName),
+        results.map(([, data]) => data),
+      ),
+      results.reduce((acc, [, , meta]) => ({ ...acc, ...meta }), {}),
+    ];
   }
 
-  private async getForeignKeyOfRef(ref: SeederRef, args: Any): Promise<number | null> {
+  private async getForeignKeyOfRef(ref: SeederRef, args: Any): Promise<[number | undefined | null, object, object]> {
     const providedForeignKey = await executeIfFunction(args[ref.foreignKey]);
 
     if (ref.optional && providedForeignKey === null) {
-      return null;
+      return [null, {}, {}];
     }
 
-    return providedForeignKey ?? (await this.seed(ref.factoryName));
+    if (providedForeignKey !== undefined) {
+      if (typeof providedForeignKey === 'object') {
+        const factory = this.getFactory(ref.factoryName);
+        const extractedForeignKey = providedForeignKey[factory.primaryKey];
+        return [extractedForeignKey, { [factory.name]: extractedForeignKey }, { [factory.name]: providedForeignKey }];
+      } else if (typeof providedForeignKey === 'number') {
+        return [providedForeignKey, {}, {}];
+      } else {
+        throw new Error(`The foreign key "${ref.foreignKey}" must be a number or an object`);
+      }
+    }
+
+    return await this.seed(ref.factoryName);
   }
 
   private getFactory(factoryName: string) {

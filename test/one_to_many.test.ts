@@ -44,7 +44,7 @@ describe('One-to-Many Ref', () => {
   });
 
   it('should seed a single channel linked to many users', async () => {
-    const channelID = await seeder.seed('channel');
+    const [channelID] = await seeder.seed('channel');
 
     await seeder.seed('user', { channelID });
     await seeder.seed('user', { channelID });
