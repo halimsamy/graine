@@ -11,13 +11,13 @@ export default abstract class SeederFactory {
     return [];
   }
 
-  public before?(args: Any, meta: Any, seeder: Seeder): void | Promise<void> {
+  public before?(args: Any, context: Any, seeder: Seeder): void | Promise<void> {
     return;
   }
 
-  public after?(args: Any, meta: Any, seeder: Seeder): void | Promise<void> {
+  public after?(args: Any, context: Any, seeder: Seeder): void | Promise<void> {
     return;
   }
 
-  public abstract provider(args: Any, meta: Any): object | Promise<object>;
+  public abstract provider(args: Any, context: Any): object | Promise<object>;
 }

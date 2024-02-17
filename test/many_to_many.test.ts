@@ -71,7 +71,7 @@ describe('Many-to-Many Ref', () => {
   });
 
   it('should seed a user_channel with a user and a channel correspondent', async () => {
-    const [, , meta] = await seeder.seed('user_channel');
+    const [, , context] = await seeder.seed('user_channel');
 
     const channels = databaseWriter.database['channels'];
     expect(channels.length).toBe(1);
@@ -85,8 +85,8 @@ describe('Many-to-Many Ref', () => {
     expect(user_channels[0].userID).toBe(1);
     expect(user_channels[0].channelID).toBe(1);
 
-    expect(meta['user_channel']).toEqual(databaseWriter.database['user_channels'][0]);
-    expect(meta['user']).toEqual(users[0]);
-    expect(meta['channel']).toEqual(channels[0]);
+    expect(context['user_channel']).toEqual(databaseWriter.database['user_channels'][0]);
+    expect(context['user']).toEqual(users[0]);
+    expect(context['channel']).toEqual(channels[0]);
   });
 });

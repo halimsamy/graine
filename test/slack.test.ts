@@ -32,9 +32,9 @@ describe('Slack-clone', () => {
     provider: () => ({
       name: faker.word.noun(),
     }),
-    after: async (args, meta, seeder) => {
-      if (meta['channel_user']) return;
-      const { user, channel } = meta;
+    after: async (args, context, seeder) => {
+      if (context['channel_user']) return;
+      const { user, channel } = context;
 
       await seeder.seed('channel_user', { userID: user, channelID: channel });
     },
@@ -66,11 +66,11 @@ describe('Slack-clone', () => {
   });
 
   it('should seed a channel_user with a user and a channel correspondent', async () => {
-    const [, , meta] = await seeder.seed('channel_user');
+    const [, , context] = await seeder.seed('channel_user');
 
     const channels = databaseWriter.database['channels'];
     expect(channels.length).toBe(1);
-    expect(channels[0].ownerID).toBe(meta['user'].userID);
+    expect(channels[0].ownerID).toBe(context['user'].userID);
 
     const users = databaseWriter.database['users'];
     expect(users.length).toBe(2);
@@ -78,18 +78,18 @@ describe('Slack-clone', () => {
     const channel_users = databaseWriter.database['channel_users'];
     expect(channel_users.length).toBe(2);
 
-    expect(meta['channel_user']).toEqual(databaseWriter.database['channel_users'][1]);
-    expect(meta['user']).toEqual(users[1]);
-    expect(meta['channel']).toEqual(channels[0]);
+    expect(context['channel_user']).toEqual(databaseWriter.database['channel_users'][1]);
+    expect(context['user']).toEqual(users[1]);
+    expect(context['channel']).toEqual(channels[0]);
   });
 
   it('should seed a channel with an owner', async () => {
-    const [channelID, , meta] = await seeder.seed('channel');
+    const [channelID, , context] = await seeder.seed('channel');
 
     const channels = databaseWriter.database['channels'];
     expect(channels.length).toBe(1);
     expect(channels[0].channelID).toBe(channelID);
-    expect(channels[0].ownerID).toBe(meta['user'].userID);
+    expect(channels[0].ownerID).toBe(context['user'].userID);
 
     const users = databaseWriter.database['users'];
     expect(users.length).toBe(1);
@@ -97,13 +97,13 @@ describe('Slack-clone', () => {
     const channel_users = databaseWriter.database['channel_users'];
     expect(channel_users.length).toBe(1);
 
-    expect(meta['channel']).toEqual(channels[0]);
-    expect(meta['user']).toEqual(users[0]);
+    expect(context['channel']).toEqual(channels[0]);
+    expect(context['user']).toEqual(users[0]);
   });
 
   it('should seed a message', async () => {
     const channelOwner = await seeder.seedObject('user');
-    const [,, meta] = await seeder.seed('message', { 
+    const [,, context] = await seeder.seed('message', { 
       authorID: channelOwner, 
       channelID: () => seeder.seedObject('channel', { ownerID: channelOwner })
     });
@@ -120,11 +120,11 @@ describe('Slack-clone', () => {
     const messages = databaseWriter.database['messages'];
     expect(messages.length).toBe(1);
     expect(messages[0].messageID).toBe(1);
-    expect(messages[0].authorID).toBe(meta['user'].userID);
-    expect(messages[0].channelID).toBe(meta['channel'].channelID);
+    expect(messages[0].authorID).toBe(context['user'].userID);
+    expect(messages[0].channelID).toBe(context['channel'].channelID);
 
-    expect(meta['message']).toEqual(messages[0]);
-    expect(meta['user']).toEqual(users[0]);
-    expect(meta['channel']).toEqual(channels[0]);
+    expect(context['message']).toEqual(messages[0]);
+    expect(context['user']).toEqual(users[0]);
+    expect(context['channel']).toEqual(channels[0]);
   });
 });

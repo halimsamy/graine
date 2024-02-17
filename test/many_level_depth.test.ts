@@ -11,9 +11,9 @@ describe('Many-level-depth Ref', () => {
     name: 'subscription',
     tableName: 'subscriptions',
     primaryKey: 'subscriptionID',
-    provider: (args, meta) => ({
+    provider: (args, context) => ({
       name: faker.person.fullName(),
-      days: meta.plan?.days || 0,
+      days: context.plan?.days || 0,
     }),
     refs: [ref({ factoryName: 'plan', foreignKey: 'planID' }), ref({ factoryName: 'billing_cycle', foreignKey: 'billingCycleID' })],
   });

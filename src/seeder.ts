@@ -54,9 +54,9 @@ export default class Seeder {
 
     const factory = this.getFactory(factoryName);
 
-    const [foreignKeys, _, meta] = reuseRefs ? await this.getForeignKeysOfRefs(factory.refs, args) : [undefined, undefined, {}];
+    const [foreignKeys, _, context] = reuseRefs ? await this.getForeignKeysOfRefs(factory.refs, args) : [undefined, undefined, {}];
 
-    const promises = Array.from({ length: count }).map(() => this.seedFactory(factory, args, foreignKeys, meta));
+    const promises = Array.from({ length: count }).map(() => this.seedFactory(factory, args, foreignKeys, context));
 
     return Promise.all(promises);
   }
@@ -65,24 +65,24 @@ export default class Seeder {
     factory: SeederFactory,
     args: Any,
     foreignKeys?: Record<string, number | null | undefined>,
-    meta?: object,
+    context?: object,
   ): Promise<[number | undefined, object, object]> {
     if (!foreignKeys) {
       // rome-ignore lint: it make things easier to read actually
-      [foreignKeys, , meta] = await this.getForeignKeysOfRefs(factory.refs, args);
+      [foreignKeys, , context] = await this.getForeignKeysOfRefs(factory.refs, args);
     }
 
     const argsWithForeignKeys = { ...args, ...foreignKeys };
 
-    await factory.before?.(argsWithForeignKeys, meta || {}, this);
-    const data = await factory.provider(argsWithForeignKeys, meta || {});
+    await factory.before?.(argsWithForeignKeys, context || {}, this);
+    const data = await factory.provider(argsWithForeignKeys, context || {});
     const dataWithForeignKeys = { ...data, ...foreignKeys };
     const id = await this.writer?.insert(factory.tableName, factory.primaryKey, dataWithForeignKeys);
 
     dataWithForeignKeys[factory.primaryKey] = id;
-    const newMeta = { ...meta, [factory.name]: dataWithForeignKeys };
-    await factory.after?.(argsWithForeignKeys, newMeta, this);
-    return [id, dataWithForeignKeys, newMeta];
+    const newContext = { ...context, [factory.name]: dataWithForeignKeys };
+    await factory.after?.(argsWithForeignKeys, newContext, this);
+    return [id, dataWithForeignKeys, newContext];
   }
 
   private async getForeignKeysOfRefs(refs: SeederRef[], args: Any): Promise<[Record<string, number | null | undefined>, Record<string, object>, Record<string, object>]> {
@@ -98,7 +98,7 @@ export default class Seeder {
         refs.map((ref) => ref.factoryName),
         results.map(([, data]) => data),
       ),
-      results.reduce((acc, [, , meta]) => ({ ...acc, ...meta }), {}),
+      results.reduce((acc, [, , context]) => ({ ...acc, ...context }), {}),
     ];
   }
 
