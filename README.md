@@ -129,6 +129,11 @@ class ChannelFactory extends SeederFactory {
       name: args.name ?? faker.word.noun(),
     };
   }
+
+  after(args, meta, seeder) {
+    // after creating a channel, we also want to add the creator as a channel user
+    return seeder.seed('channel_user', { channelID: meta.channel, userID: meta.user || args.userID });
+  }
 }
 
 class ChannelUserFactory extends SeederFactory {
@@ -192,19 +197,28 @@ describe('Messaging', () => {
     Graine.cleanUp();
   });
 
-  it('should not allow non-channel users to send messages', async () => {
-    const channelOwner = await Graine.seedObject('user');
-    const [,, { channel }] = await Graine.seed('channel_user', { 
-      userID: channelOwner, 
-      channelID: () => Graine.seedObject('channel', { createdBy: channelOwner.userID })
+  it('should allow channel owner to send messages', async () => {
+    // This seeds a channel, and a user who is the owner of the channel.
+    // The channel user is automatically created by the ChannelFactory's after hook
+    const [,, meta] = await Graine.seed('channel', { name: 'General' });
+
+    const subject = MessagineService.sendMessage({
+      content: 'Hello, World!',
+      sentBy: meta.user.userID,
+      channelID: meta.channel.channelID,
     });
 
+    await expect(subject).resolves.toEqual(expect.objectContaining({ status: 'success' }));
+  });
+
+  it('should not allow non-channel users to send messages', async () => {
+    const [,, meta] = await Graine.seed('channel', { name: 'General' }); 
     const nonChannelUser = await Graine.seedObject('user');
 
     const subject = MessagineService.sendMessage({
       content: 'Hello, World!',
       sentBy: nonChannelUser.userID,
-      channelID: channel.channelID,
+      channelID: meta.channel.channelID,
     });
 
     await expect(subject).rejects.toThrowError('User is not a member of the channel');

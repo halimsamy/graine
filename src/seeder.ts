@@ -73,12 +73,15 @@ export default class Seeder {
 
     const argsWithForeignKeys = { ...args, ...foreignKeys };
 
+    await factory.before?.(argsWithForeignKeys, meta || {}, this);
     const data = await factory.provider(argsWithForeignKeys, meta || {});
     const dataWithForeignKeys = { ...data, ...foreignKeys };
     const id = await this.writer?.insert(factory.tableName, factory.primaryKey, dataWithForeignKeys);
 
     dataWithForeignKeys[factory.primaryKey] = id;
-    return [id, dataWithForeignKeys, { ...meta, [factory.name]: dataWithForeignKeys }];
+    const newMeta = { ...meta, [factory.name]: dataWithForeignKeys };
+    await factory.after?.(argsWithForeignKeys, newMeta, this);
+    return [id, dataWithForeignKeys, newMeta];
   }
 
   private async getForeignKeysOfRefs(refs: SeederRef[], args: Any): Promise<[Record<string, number | null | undefined>, Record<string, object>, Record<string, object>]> {

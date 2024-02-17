@@ -23,15 +23,21 @@ describe('Slack-clone', () => {
     name: 'channel',
     tableName: 'channels',
     primaryKey: 'channelID',
-    provider: () => ({
-      name: faker.word.noun(),
-    }),
     refs: [
       ref({
         factoryName: 'user',
         foreignKey: 'ownerID',
       }),
     ],
+    provider: () => ({
+      name: faker.word.noun(),
+    }),
+    after: async (args, meta, seeder) => {
+      if (meta['channel_user']) return;
+      const { user, channel } = meta;
+
+      await seeder.seed('channel_user', { userID: user, channelID: channel });
+    },
   });
 
   seeder.register({
@@ -70,27 +76,46 @@ describe('Slack-clone', () => {
     expect(users.length).toBe(2);
 
     const channel_users = databaseWriter.database['channel_users'];
-    expect(channel_users.length).toBe(1);
-    expect(channel_users[0].userChannelID).toBe(1);
-    expect(channel_users[0].userID).toBe(1);
-    expect(channel_users[0].channelID).toBe(1);
+    expect(channel_users.length).toBe(2);
 
-    expect(meta['channel_user']).toEqual(databaseWriter.database['channel_users'][0]);
+    expect(meta['channel_user']).toEqual(databaseWriter.database['channel_users'][1]);
     expect(meta['user']).toEqual(users[1]);
     expect(meta['channel']).toEqual(channels[0]);
   });
 
+  it('should seed a channel with an owner', async () => {
+    const [channelID, , meta] = await seeder.seed('channel');
+
+    const channels = databaseWriter.database['channels'];
+    expect(channels.length).toBe(1);
+    expect(channels[0].channelID).toBe(channelID);
+    expect(channels[0].ownerID).toBe(meta['user'].userID);
+
+    const users = databaseWriter.database['users'];
+    expect(users.length).toBe(1);
+
+    const channel_users = databaseWriter.database['channel_users'];
+    expect(channel_users.length).toBe(1);
+
+    expect(meta['channel']).toEqual(channels[0]);
+    expect(meta['user']).toEqual(users[0]);
+  });
+
   it('should seed a message', async () => {
     const channelOwner = await seeder.seedObject('user');
-    const channel = await seeder.seedObject('channel', { ownerID: channelOwner });
-    await seeder.seed('channel_user', { userID: channelOwner, channelID: channel });
-    const [,, meta] = await seeder.seed('message', { authorID: channelOwner, channelID: channel });
+    const [,, meta] = await seeder.seed('message', { 
+      authorID: channelOwner, 
+      channelID: () => seeder.seedObject('channel', { ownerID: channelOwner })
+    });
 
     const channels = databaseWriter.database['channels'];
     expect(channels.length).toBe(1);
 
     const users = databaseWriter.database['users'];
     expect(users.length).toBe(1);
+
+    const channel_users = databaseWriter.database['channel_users'];
+    expect(channel_users.length).toBe(1);
 
     const messages = databaseWriter.database['messages'];
     expect(messages.length).toBe(1);

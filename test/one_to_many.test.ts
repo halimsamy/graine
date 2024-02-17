@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { faker } from '@faker-js/faker';
 import { Seeder, SeederFactory, ref } from '../src';
 import InMemoryDatabaseWriter from './utils/writer';
+import { Any } from '../src/helpers';
 
 describe('One-to-Many Ref', () => {
   const databaseWriter = new InMemoryDatabaseWriter();
