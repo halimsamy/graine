@@ -68,6 +68,7 @@ export default class Seeder {
     meta?: object,
   ): Promise<[number | undefined, object, object]> {
     if (!foreignKeys) {
+      // rome-ignore lint: it make things easier to read actually
       [foreignKeys, , meta] = await this.getForeignKeysOfRefs(factory.refs, args);
     }
 
