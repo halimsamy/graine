@@ -81,7 +81,7 @@ class InMemoryDatabaseWriter implements ISeederWriter {
   }
 }
 
-Graine.register(new InMemoryDatabaseWriter());
+Graine.setWriter(new InMemoryDatabaseWriter());
 ```
 ---
 
@@ -329,14 +329,23 @@ for (const [channelID, channel, context] of results) {
 
 ---
 
-#### `cleanUp(): void`
+#### `cleanUp(...factoryNames: string[]): void`
 
-Removes all seeded data from the writer.
+Removes all seeded data for the specified factories from the writer.
 
-- **Example:**
+If no factory names are provided, all seeded data will be removed.
+
+- **Example 1:**
   ```typescript
-  Graine.cleanUp();
+  Graine.cleanUp(); // removes all seeded data
   ```
+
+- **Example 2:**
+  ```typescript
+  Graine.cleanUp("user"); // removes all seeded data for the user factory (might cause foreign key constraints issues)
+  ```
+
+---
 
 ## Showcase (Messaging App)
 This example demonstrates a messaging app scenario, where we have users, channels, channel users, and messages. We use `refs` to define the relationships between the factories, and the seeder will automatically handle the relationships.
