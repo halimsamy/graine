@@ -3,7 +3,6 @@ import SeederRef from './ref';
 import SeederFactory from './factory';
 import { Any, combineAsKeyValuePairs, executeIfFunction } from './helpers';
 
-
 type SeedId = number | undefined | null;
 // rome-ignore lint: ignore
 type Data = Record<string, any>;
@@ -11,11 +10,7 @@ type Data = Record<string, any>;
 type Context = Record<string, any>;
 type ForeignKeys = Record<string, SeedId>;
 
-type SeedTuple<D extends Data = Data, C extends Context = Context> = [
-  id: SeedId,
-  data: D,
-  context: C
-];
+type SeedTuple<D extends Data = Data, C extends Context = Context> = [id: SeedId, data: D, context: C];
 
 type SeedManyArgs<A extends Data = Data> = {
   args?: A;
@@ -80,7 +75,7 @@ export default class Seeder {
     args: Any,
     foreignKeys?: Record<string, number | null | undefined>,
     context?: Context,
-    reuseRefs?: boolean
+    reuseRefs?: boolean,
   ): Promise<SeedTuple<T>> {
     if (!context) {
       // rome-ignore lint: it make things easier to read actually
@@ -104,12 +99,18 @@ export default class Seeder {
     return [id, dataWithForeignKeys as T, newContext];
   }
 
-  private async resolveForeignKeys(__factoryName: string, refs: SeederRef[], args: Any, initContext: Context, reuseRefs: boolean): Promise<[ForeignKeys, Record<string, object>, Context]> {
+  private async resolveForeignKeys(
+    __factoryName: string,
+    refs: SeederRef[],
+    args: Any,
+    initContext: Context,
+    reuseRefs: boolean,
+  ): Promise<[ForeignKeys, Record<string, object>, Context]> {
     if (!refs || !refs.length) return [{}, {}, {}];
 
     const results: Array<[SeedId, object, Context]> = [];
     let context = initContext || {};
-    
+
     for (const ref of refs) {
       if (reuseRefs) {
         // continuously expand context with the previously resolved contexts
@@ -123,18 +124,15 @@ export default class Seeder {
 
     const foreignKeys = combineAsKeyValuePairs(
       refs.map((ref) => ref.foreignKey),
-      results.map(([fk]) => fk)
+      results.map(([fk]) => fk),
     ) as ForeignKeys;
 
     const fkObjects = combineAsKeyValuePairs(
       refs.map((ref) => ref.factoryName),
-      results.map(([, data]) => data)
+      results.map(([, data]) => data),
     ) as Record<string, object>;
 
-    const mergedContext = results.reduce<Context>(
-      (acc, [, , ctx]) => ({ ...acc, ...ctx }),
-      {}
-    );
+    const mergedContext = results.reduce<Context>((acc, [, , ctx]) => ({ ...acc, ...ctx }), {});
 
     return [foreignKeys, fkObjects, mergedContext];
   }
@@ -145,7 +143,7 @@ export default class Seeder {
     if (ref.optional && providedForeignKey === null) {
       return [null, {}, {}];
     }
-    
+
     const factory = this.getFactory(ref.factoryName);
 
     if (providedForeignKey !== undefined) {
@@ -167,19 +165,16 @@ export default class Seeder {
         return [pk, obj as object, { ...context, [ref.factoryName]: obj }];
       }
 
-      const extededArgs = Object.assign({}, ...factory.refs.map(innerRef => ({
-        [innerRef.foreignKey]: context[innerRef.factoryName],
-      })));
+      const extededArgs = Object.assign(
+        {},
+        ...factory.refs.map((innerRef) => ({
+          [innerRef.foreignKey]: context[innerRef.factoryName],
+        })),
+      );
       newArgs = { ...extededArgs, ...args };
     }
 
-    return this.seedFactory(
-      factory,
-      newArgs,
-      undefined,
-      context,
-      reuseRefs
-    );
+    return this.seedFactory(factory, newArgs, undefined, context, reuseRefs);
   }
 
   private getFactory(factoryName: string) {
