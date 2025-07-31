@@ -3,8 +3,20 @@ import SeederRef from './ref';
 import SeederFactory from './factory';
 import { Any, combineAsKeyValuePairs, executeIfFunction } from './helpers';
 
-type SeedManyArgs = {
-  args?: Any;
+
+type SeedId = number | undefined | null;
+type Data = Record<string, any>;
+type Context = Record<string, any>;
+type ForeignKeys = Record<string, SeedId>;
+
+type SeedTuple<D extends Data = Data, C extends Context = Context> = [
+  id: SeedId,
+  data: D,
+  context: C
+];
+
+type SeedManyArgs<A extends Data = Data> = {
+  args?: A;
   count: number;
   reuseRefs?: boolean;
 };
@@ -37,81 +49,104 @@ export default class Seeder {
     await this.writer?.cleanUp(factories.map((f) => f.tableName));
   }
 
-  public async seed(factoryName: string, args: Any = {}) {
-    const [result] = await this.seedMany(factoryName, { args, count: 1 });
+  public async seed<T extends object>(factoryName: string, args: Any = {}, reuseRefs = true): Promise<SeedTuple<T>> {
+    const [result] = await this.seedMany<T>(factoryName, { args, count: 1, reuseRefs });
 
     return result;
   }
 
-  public async seedObject(factoryName: string, args: Any = {}) {
-    const [[_, object]] = await this.seedMany(factoryName, { args, count: 1 });
+  public async seedObject<T extends object>(factoryName: string, args: Any = {}, reuseRefs = true): Promise<T> {
+    const [[_, object]] = await this.seedMany(factoryName, { args, count: 1, reuseRefs });
 
-    return object;
+    return object as T;
   }
 
-  public async seedMany(factoryName: string, { args = {}, count = 1, reuseRefs = true }: SeedManyArgs) {
+  public async seedMany<T extends object>(factoryName: string, { args = {}, count = 1, reuseRefs = true }: SeedManyArgs): Promise<Array<SeedTuple<T>>> {
     this.validateWriter();
 
     const factory = this.getFactory(factoryName);
 
-    const [foreignKeys, _, context] = reuseRefs ? await this.getForeignKeysOfRefs(factory.refs, args) : [undefined, undefined, {}];
+    const [foreignKeys, _, context] = reuseRefs ? await this.resolveForeignKeys(factoryName, factory.refs, args, {}, reuseRefs) : [undefined, undefined, {}];
 
-    const promises = Array.from({ length: count }).map(() => this.seedFactory(factory, args, foreignKeys, context));
+    const promises = Array.from({ length: count }).map(() => this.seedFactory<T>(factory, args, foreignKeys, context, reuseRefs));
 
     return Promise.all(promises);
   }
 
-  private async seedFactory(
+  private async seedFactory<T extends object>(
     factory: SeederFactory,
     args: Any,
     foreignKeys?: Record<string, number | null | undefined>,
-    context?: object,
-  ): Promise<[number | undefined, object, object]> {
+    context?: Context,
+    reuseRefs?: boolean
+  ): Promise<SeedTuple<T>> {
+    if (!context) {
+      context = {};
+    }
+
     if (!foreignKeys) {
       // rome-ignore lint: it make things easier to read actually
-      [foreignKeys, , context] = await this.getForeignKeysOfRefs(factory.refs, args);
+      [foreignKeys, , context] = await this.resolveForeignKeys(factory.name, factory.refs, args, context, reuseRefs ?? true);
     }
 
     const argsWithForeignKeys = { ...args, ...foreignKeys };
-
-    await factory.before?.(argsWithForeignKeys, context || {}, this);
-    const data = await factory.provider(argsWithForeignKeys, context || {});
+    await factory.before?.(argsWithForeignKeys, context, this);
+    const data = await factory.provider(argsWithForeignKeys, context);
     const dataWithForeignKeys = { ...data, ...foreignKeys };
     const id = await this.writer?.insert(factory.tableName, factory.primaryKey, dataWithForeignKeys);
 
     dataWithForeignKeys[factory.primaryKey] = id;
     const newContext = { ...context, [factory.name]: dataWithForeignKeys };
     await factory.after?.(argsWithForeignKeys, newContext, this);
-    return [id, dataWithForeignKeys, newContext];
+    return [id, dataWithForeignKeys as T, newContext];
   }
 
-  private async getForeignKeysOfRefs(refs: SeederRef[], args: Any): Promise<[Record<string, number | null | undefined>, Record<string, object>, Record<string, object>]> {
+  private async resolveForeignKeys(__factoryName: string, refs: SeederRef[], args: Any, initContext: Context, reuseRefs: boolean): Promise<[ForeignKeys, Record<string, object>, Context]> {
     if (!refs || !refs.length) return [{}, {}, {}];
 
-    const results = await Promise.all(refs.map((ref) => this.getForeignKeyOfRef(ref, args)));
-    return [
-      combineAsKeyValuePairs(
-        refs.map((ref) => ref.foreignKey),
-        results.map(([foreignKey]) => foreignKey),
-      ),
-      combineAsKeyValuePairs(
-        refs.map((ref) => ref.factoryName),
-        results.map(([, data]) => data),
-      ),
-      results.reduce((acc, [, , context]) => ({ ...acc, ...context }), {}),
-    ];
+    const results: Array<[SeedId, object, Context]> = [];
+    let context = initContext || {};
+    
+    for (const ref of refs) {
+      if (reuseRefs) {
+        // continuously expand context with the previously resolved contexts
+        const partialCtx = Object.assign({}, ...results.map((r) => r[2]));
+        context = { ...partialCtx, ...context };
+      }
+
+      const result = await this.processForeignKey(ref, args, context, reuseRefs);
+      results.push(result);
+    }
+
+    const foreignKeys = combineAsKeyValuePairs(
+      refs.map((ref) => ref.foreignKey),
+      results.map(([fk]) => fk)
+    ) as ForeignKeys;
+
+    const fkObjects = combineAsKeyValuePairs(
+      refs.map((ref) => ref.factoryName),
+      results.map(([, data]) => data)
+    ) as Record<string, object>;
+
+    const mergedContext = results.reduce<Context>(
+      (acc, [, , ctx]) => ({ ...acc, ...ctx }),
+      {}
+    );
+
+    return [foreignKeys, fkObjects, mergedContext];
   }
 
-  private async getForeignKeyOfRef(ref: SeederRef, args: Any): Promise<[number | undefined | null, object, object]> {
+  private async processForeignKey(ref: SeederRef, args: Any, context: Context, reuseRefs: boolean): Promise<[SeedId, object, Context]> {
     const providedForeignKey = await executeIfFunction(args[ref.foreignKey]);
 
     if (ref.optional && providedForeignKey === null) {
       return [null, {}, {}];
     }
+    
+    const factory = this.getFactory(ref.factoryName);
 
     if (providedForeignKey !== undefined) {
       if (typeof providedForeignKey === 'object') {
-        const factory = this.getFactory(ref.factoryName);
         const extractedForeignKey = providedForeignKey[factory.primaryKey];
         return [extractedForeignKey, { [factory.name]: extractedForeignKey }, { [factory.name]: providedForeignKey }];
       } else if (typeof providedForeignKey === 'number') {
@@ -121,7 +156,27 @@ export default class Seeder {
       }
     }
 
-    return await this.seed(ref.factoryName);
+    let newArgs = args;
+    if (reuseRefs) {
+      if (ref.factoryName in context) {
+        const obj = context[ref.factoryName] as Any;
+        const pk = obj?.[this.getFactory(ref.factoryName).primaryKey] as SeedId;
+        return [pk, obj as object, { ...context, [ref.factoryName]: obj }];
+      }
+
+      const extededArgs = Object.assign({}, ...factory.refs.map(innerRef => ({
+        [innerRef.foreignKey]: context[innerRef.factoryName],
+      })));
+      newArgs = { ...extededArgs, ...args };
+    }
+
+    return this.seedFactory(
+      factory,
+      newArgs,
+      undefined,
+      context,
+      reuseRefs
+    );
   }
 
   private getFactory(factoryName: string) {

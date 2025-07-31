@@ -181,13 +181,14 @@ Registers a factory for a model/table.
 
 ---
 
-#### `seed(factoryName: string, args?: object): Promise<[id, record, context]>`
+#### `seed(factoryName: string, args?: object, reuseRefs?: boolean): Promise<[id, record, context]>`
 
 Seeds a single record for the given factory.
 
 - **Parameters:**
   - `factoryName`: Name of the registered factory.
   - `args`: Optional overrides for the provider.
+  - `reuseRefs`: Whether to reuse existing references (default: true).
 
 - **Returns:** Promise resolving to `[id, record, context]`:
   - `id`: Primary key value of the created record.
@@ -260,7 +261,7 @@ dependent records.
 
 ---
 
-#### `seedObject(factoryName: string, args?: object): Promise<record>`
+#### `seedObject(factoryName: string, args?: object, reuseRefs?: boolean): Promise<record>`
 
 A shorthand method for seeding a single object. It internally calls `seed` and returns just the record. Use if you don't care about the `context`.
 

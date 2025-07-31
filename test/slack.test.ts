@@ -33,7 +33,6 @@ describe('Slack-clone', () => {
       name: faker.word.noun(),
     }),
     after: async (args, context, seeder) => {
-      if (context['channel_user']) return;
       const { user, channel } = context;
 
       await seeder.seed('channel_user', { userID: user, channelID: channel });
@@ -66,7 +65,7 @@ describe('Slack-clone', () => {
   });
 
   it('should seed a channel_user with a user and a channel correspondent', async () => {
-    const [, , context] = await seeder.seed('channel_user');
+    const [, , context] = await seeder.seed('channel_user', {}, false);
 
     const channels = databaseWriter.database['channels'];
     expect(channels.length).toBe(1);
