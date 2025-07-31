@@ -5,7 +5,9 @@ import { Any, combineAsKeyValuePairs, executeIfFunction } from './helpers';
 
 
 type SeedId = number | undefined | null;
+// rome-ignore lint: ignore
 type Data = Record<string, any>;
+// rome-ignore lint: ignore
 type Context = Record<string, any>;
 type ForeignKeys = Record<string, SeedId>;
 
@@ -81,6 +83,7 @@ export default class Seeder {
     reuseRefs?: boolean
   ): Promise<SeedTuple<T>> {
     if (!context) {
+      // rome-ignore lint: it make things easier to read actually
       context = {};
     }
 
