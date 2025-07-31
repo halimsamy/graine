@@ -102,9 +102,9 @@ describe('Slack-clone', () => {
 
   it('should seed a message', async () => {
     const channelOwner = await seeder.seedObject('user');
-    const [,, context] = await seeder.seed('message', { 
-      authorID: channelOwner, 
-      channelID: () => seeder.seedObject('channel', { ownerID: channelOwner })
+    const [, , context] = await seeder.seed('message', {
+      authorID: channelOwner,
+      channelID: () => seeder.seedObject('channel', { ownerID: channelOwner }),
     });
 
     const channels = databaseWriter.database['channels'];
